@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+<!-- Required meta tags -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+<title>Guitar Chord Generator - I'm GYX</title>
+<style>
+.col-1-7, col-xs-1-7, .col-sm-1-7, .col-md-1-7, .col-lg-1-7 {
+	position: relative;
+	min-height: 1px;
+	padding-right: 15px;
+	padding-left: 15px;
+}
+.col-1-7, .col-xs-1-7 { width: 14.2857%; float: left; }
+.string-fret, .string-text, .string-tuning, .barre {
+	text-align: center;
+	//color: #00A0E9;
+	color: #007bff;
+}
+#chart-config-form input {
+	color: #007bff;
+}
+/* 让 textarea 完全和 pre 一样 */
+	.textarea-as-pre {
+	font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; /* 等宽字体（和 pre 一致） */
+	white-space: pre; /* 保留空格、换行 */
+	overflow-wrap: normal;
+	//background-color: #f8f9fa;
+	border: 1px solid #dee2e6;
+	padding: 0.5rem;
+	border-radius: 0.375rem;
+	//resize: vertical;
+}
+</style>
+</head>
+<body>
+	<div class="container mt-4">
+		<h1 class="mb-4">吉他和弦生成器</h1>
+		<div class="row">
+		<div class="col-md-5">
+			<div>
+			<h3>和弦指法<small class="text-dark"> (json)</small></h3>
+
+			<form id="chord-json">
+				<textarea name="chord" id="chord-input" rows="9" class="w-100 textarea-as-pre"></textarea>
+				<small>和弦的 JSON 数据。详情请参阅<a href="https://omnibrain.github.io/svguitar/docs/" target="_blank">文档</a>。</small>
+
+				<div class="my-3">
+					<button type="submit" class="btn btn-primary">生成和弦图</button>
+				</div>
+			</form>
+
+			</div>
+			<div class="mt-3">
+			<h3>设置</h3>
+
+			<form id="chart-config-form">
+				<div class="row">
+				<div class="form-group col-6 pr-2">
+					<label for="chart-title">和弦名称</label>
+					<input class="form-control" id="chart-title"
+						name="title"
+						type="text" placeholder="输入和弦名称"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-position">起始品格</label>
+					<input class="form-control" id="chart-position"
+						name="position"
+						type="number" step="1" placeholder="Enter position"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-frets">品格数量</label>
+					<input class="form-control" id="chart-frets"
+						name="frets"
+						type="number" step="1" placeholder="Enter frets"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-strings">琴弦数量</label>
+					<input class="form-control" id="chart-strings"
+						name="strings"
+						type="number" step="1" placeholder="Enter strings"
+					/>
+				</div>
+				</div>
+
+				<!-- 更多设置 开关 -->
+				<a class="btn btn-sm btn-outline-secondary w-100 mb-3" id="toggleMore">
+					更多设置 ▼
+				</a>
+				<!-- 更多设置内容（默认隐藏） -->
+				<!-- <div id="moreSettings" class="row" style="display:none;"> -->
+				<div id="moreSettings" class="row">
+				<div class="form-group col-6 pr-2">
+					<label for="chart-orientation">方向</label>
+					<select name="orientation" class="form-control" id="chart-orientation">
+						<option value="vertical" selected="selected">垂直</option>
+						<option value="horizontal">水平</option>
+					</select>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-style">风格</label>
+					<select name="style" class="form-control" id="chart-style">
+						<option value="normal" selected="selected">正常</option>
+						<option value="handdrawn">手绘</option>
+					</select>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-color">颜色</label>
+					<input class="form-control" id="chart-color"
+						name="color"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-backgroundColor">背景颜色</label>
+					<input class="form-control" id="chart-backgroundColor"
+						name="backgroundColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-emptyStringIndicatorSize">空弦上方 "<code>x</code>" 和 "<code>o</code>" 符号大小</label>
+					<input class="form-control" id="chart-emptyStringIndicatorSize"
+						name="emptyStringIndicatorSize"
+						type="number" step="0.01" max="0.5" placeholder="默认0.6"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="fixedDiagramPosition" id="fixedDiagramPosition">
+						<label class="custom-control-label" for="fixedDiagramPosition">固定标题位置</label>
+					</div>
+				</div>
+
+				<div class="form-group col-6 pr-2 mt-1">
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="noPosition" id="noPosition">
+						<label class="custom-control-label" for="noPosition"><b class="text-danger">隐藏</b>起始品格</label>
+					</div>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="showFretMarkers" id="showFretMarkers">
+						<label class="custom-control-label" for="showFretMarkers">显示品格标记</label>
+					</div>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-titleFontSize">标题字体大小</label>
+					<input class="form-control" id="chart-titleFontSize"
+						name="titleFontSize"
+						type="number" step="1" placeholder="默认：48"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-titleColor">标题字体颜色<small class="text-dark"> (设置颜色无效)</small></label>
+					<input class="form-control" id="chart-titleColor"
+						name="titleColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fingerSize">手指大小<small class="text-dark"> (相对琴弦间距)</small></label>
+					<input class="form-control" id="chart-fingerSize"
+						name="fingerSize"
+						type="number" step=".01" placeholder="默认：0.65"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fingerTextSize">手指文字大小<small class="text-dark"> (包括大横按)</small></label>
+					<input class="form-control" id="chart-fingerTextSize"
+						name="fingerTextSize"
+						type="text" placeholder="默认：22"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fingerColor">手指颜色</label>
+					<input class="form-control" id="chart-fingerColor"
+						name="fingerColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fingerTextColor">手指文字颜色<small class="text-dark"> (包括大横按)</small></label>
+					<input class="form-control" id="chart-fingerTextColor"
+						name="fingerTextColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fingerStrokeWidth">手指轮廓粗细</label>
+					<input class="form-control" id="chart-fingerStrokeWidth"
+						name="fingerStrokeWidth"
+						type="number" step=".1" placeholder="默认：0"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fingerStrokeColor">手指轮廓颜色</label>
+					<input class="form-control" id="chart-fingerStrokeColor"
+						name="fingerStrokeColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-barreChordColor">大横按颜色<small class="text-dark"> (未写好)</small></label>
+					<input class="form-control" id="chart-barreChordColor"
+						name="barreChordColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-barreChordRadius">大横按和弦半径<small class="text-dark"> (相对琴弦间距)</small></label>
+					<input class="form-control" id="chart-barreChordRadius"
+						name="barreChordRadius"
+						type="number" step="0.01" max="0.5" placeholder="默认：0.25"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-barreChordStrokeWidth">大横按轮廓粗细</label>
+					<input class="form-control" id="chart-barreChordStrokeWidth"
+						name="barreChordStrokeWidth"
+						type="number" step=".1" placeholder="默认：0"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-barreChordStrokeColor">大横按轮廓颜色</label>
+					<input class="form-control" id="chart-barreChordStrokeColor"
+						name="barreChordStrokeColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-nutWidth">琴枕粗细</label>
+					<input class="form-control" id="chart-nutWidth"
+						name="nutWidth"
+						type="number" step="1" placeholder="默认：10"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-strokeWidth">线条粗细</label>
+					<input class="form-control" id="chart-strokeWidth"
+						name="strokeWidth"
+						type="number" step="0.1" placeholder="默认：2"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fretSize">品格高度<small class="text-dark"> (相对琴弦间距)</small></label>
+					<input class="form-control" id="chart-fretSize"
+						name="fretSize"
+						type="number" step="0.01" placeholder="默认：1.5"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-barreChordRadius">大横按和弦半径<small class="text-dark"> (相对琴弦间距)</small></label>
+					<input class="form-control" id="chart-barreChordRadius"
+						name="barreChordRadius"
+						type="number" step="0.01" max="0.5" placeholder="Enter Barre Chord Radius"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-stringColor">String Color<small class="text-dark"> (设置颜色无效)</small></label>
+					<input class="form-control" id="chart-stringColor"
+						name="stringColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-color">Color</label>
+					<input class="form-control" id="chart-color"
+						name="color"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fretColor">品格颜色</label>
+					<input class="form-control" id="chart-fretColor"
+						name="fretColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+				
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fretLabelPosition">品格标签位置</label>
+					<select name="fretLabelPosition" class="form-control" id="chart-fretLabelPosition">
+						<option value="left">左</option>
+						<option value="right" selected="selected">右</option>
+					</select>
+				</div>
+				
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fretLabelFontSize">品格标签字体大小</label>
+					<input class="form-control" id="chart-fretLabelFontSize"
+						name="fretLabelFontSize"
+						type="text" step="1" placeholder="默认：38"
+					/>
+				</div>
+				
+				<div class="form-group col-6 pr-2">
+					<label for="chart-fretLabelColor">品格标签颜色</label>
+					<input class="form-control" id="chart-fretLabelColor"
+						name="fretLabelColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+<!--
+				<div class="form-group col-6 pr-2">
+					<label for="chart-watermark">水印</label>
+					<input class="form-control" id="chart-watermark"
+						name="watermark"
+						type="text" placeholder="水印"
+					/>
+				</div>
+				<div class="form-group col-6 pr-2">
+					<label for="chart-watermarkColor">水印文字颜色</label>
+					<input class="form-control" id="chart-watermarkColor"
+						name="watermarkColor"
+						type="text" placeholder="HEX Color Code"
+					/>
+				</div>
+-->
+				</div>
+			</form>
+		<h5 class="row mt-4">颜色参考</h5>
+		<div class="row">
+		<ul class="list-group">
+			<li class="list-group-item"><a href="https://w3schools.org.cn/colors/colors_picker.asp" target="_blank">HTML 颜色选择器</a></li>
+			<li class="list-group-item"><a href="https://w3schools.org.cn/bootstrap4/bootstrap_colors.asp" target="_blank">Bootstrap 4 颜色</a></li>
+			<li class="list-group-item"><a href="https://www.ral-farben.de/en/all-ral-colours" target="_blank">All RAL colours - RAL Colours</a></li>
+			<li class="list-group-item"><a href="https://www.ralcolorchart.com/" target="_blank">Overview of all RAL colors - RALcolorchart.com</a></li>
+			<li class="list-group-item"><a href="http://www.iso7010.de/farbtabelle/" target="_blank">Colour table - DIN EN ISO 7010</a></li>
+		</ul>
+		</div>
+			</div>
+		</div>
+
+		<div class="col-md-6 offset-md-1">
+			<div class="mb-3">
+				<h3>和弦指法</h3>
+				<form id="chord-form">
+					<div class="card p-2 mb-2">
+					<!-- 琴弦顺序：6 5 4 3 2 1 -->
+					<div class="row mb-2 no-gutters text-center font-weight-bold" style="display: grid; grid-template-columns: repeat(7, 1fr);">
+						<div class="col px-2 text-center font-weight-bold">琴弦</div>
+						<div class="col px-2">6弦</div>
+						<div class="col px-2">5弦</div>
+						<div class="col px-2">4弦</div>
+						<div class="col px-2">3弦</div>
+						<div class="col px-2">2弦</div>
+						<div class="col px-2">1弦</div>
+					</div>
+					<!-- 品格输入 -->
+					<div class="row mb-2 no-gutters">
+						<div class="col px-2 text-center font-weight-bold d-flex justify-content-center align-items-center">品格</div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-fret" data-string="6" placeholder="品/x/0"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-fret" data-string="5" placeholder="品/x/0"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-fret" data-string="4" placeholder="品/x/0"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-fret" data-string="3" placeholder="品/x/0"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-fret" data-string="2" placeholder="品/x/0"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-fret" data-string="1" placeholder="品/x/0"></div>
+					</div>
+					<!-- 文字（可选） -->
+					<div class="row no-gutters">
+						<div class="col px-2 col-1-7 text-center font-weight-bold d-flex justify-content-center align-items-center">文字</div>
+						<div class="col px-2 col-1-7"><input type="text" class="form-control form-control-sm string-text" data-string="6" placeholder="1~4"></div>
+						<div class="col px-2 col-1-7"><input type="text" class="form-control form-control-sm string-text" data-string="5" placeholder="1~4"></div>
+						<div class="col px-2 col-1-7"><input type="text" class="form-control form-control-sm string-text" data-string="4" placeholder="1~4"></div>
+						<div class="col px-2 col-1-7"><input type="text" class="form-control form-control-sm string-text" data-string="3" placeholder="1~4"></div>
+						<div class="col px-2 col-1-7"><input type="text" class="form-control form-control-sm string-text" data-string="2" placeholder="1~4"></div>
+						<div class="col px-2 col-1-7"><input type="text" class="form-control form-control-sm string-text" data-string="1" placeholder="1~4"></div>
+					</div>
+					</div>
+					<!-- 大横按 -->
+					<div class="card p-2 mb-3">
+						<div class="custom-control custom-switch mb-1">
+							<input type="checkbox" class="custom-control-input" id="barre_enable">
+							<label class="custom-control-label" for="barre_enable">启用大横按设置</label>
+						</div>
+						<div class="row no-gutters">
+							<div class="col-3 px-2">
+								<label class="mb-1" for="barre_from">从几弦</label>
+								<input disabled type="number" class="form-control form-control-sm barre" id="barre_from" min="0" max="7"  placeholder="从几弦, 例: 5" >
+							</div>
+							<div class="col-3 px-2">
+								<label class="mb-1" for="barre_to">到几弦</label>
+								<input disabled type="number" class="form-control form-control-sm barre" id="barre_to" min="0" max="7" placeholder="到几弦, 例: 1">
+							</div>
+							<div class="col-3 px-2">
+								<label class="mb-1" for="barre_fret">品格</label>
+								<input disabled type="number" class="form-control form-control-sm barre" id="barre_fret" min="0" placeholder="品格, 例: 1">
+							</div>
+							<div class="col-3 px-2">
+								<label class="mb-1" for="barre_text">文字</label>
+								<input disabled type="text"   class="form-control form-control-sm barre" id="barre_text" placeholder="文字(可选)">
+							</div>
+						</div>
+					</div>
+
+					<!-- 调音 -->
+					<!--
+					<div class="card p-2 mb-3">
+						<div class="form-group form-check mb-1">
+							<input type="checkbox" class="form-check-input" id="tuning_enable">
+							<label class="form-check-label">启用调音</label>
+						</div>
+						<div class="row mb-2 no-gutters text-center font-weight-bold" style="display: grid; grid-template-columns: repeat(7, 1fr);">
+						<div class="col px-2 text-center font-weight-bold">琴弦</div>
+						<div class="col px-2">6弦</div>
+						<div class="col px-2">5弦</div>
+						<div class="col px-2">4弦</div>
+						<div class="col px-2">3弦</div>
+						<div class="col px-2">2弦</div>
+						<div class="col px-2">1弦</div>
+					</div>
+					-->
+					<!-- 品格输入 -->
+					<!--
+					<div class="row mb-2 no-gutters">
+						<div class="col px-2 text-center font-weight-bold d-flex justify-content-center align-items-center">调音</div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-tuning" data-string="6" placeholder="E"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-tuning" data-string="5" placeholder="A"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-tuning" data-string="4" placeholder="D"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-tuning" data-string="3" placeholder="G"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-tuning" data-string="2" placeholder="B"></div>
+						<div class="col px-2"><input type="text" class="form-control form-control-sm w-100 string-tuning" data-string="1" placeholder="E"></div>
+					</div>
+					</div>
+					-->
+				<div class="my-3">
+					<button type="submit" class="btn btn-primary">生成和弦图</button>
+				</div>
+				</form>
+			</div>
+			<div class="card p-2">
+				<h3>结果</h3>
+				<div id="result"></div>
+			</div>
+			<div class="grid mt-2 mb-4 gap-2">
+				<button class="btn btn-sm btn-success" id="downloadSvgBtn">下载SVG</button>
+				<button class="btn btn-sm btn-info" id="downloadPngBtn">下载PNG</button>
+				<span>png 导出倍率：</span>
+				<select id="pngScaleSelect" class="form-select form-select-sm w-auto">
+					<option value="1">1× 普通</option>
+					<option value="2" selected>2× 高清</option>
+					<option value="3">3× 超清</option>
+					<option value="4">4× 超大图</option>
+				</select>
+			</div>
+			<div class="card p-2 mb-1">
+				<label class="d-block mb-1">快捷常用和弦<small class="text-secondary">（点击一键生成）</small></label>
+				<div id="quickChordContainer" class="grid gap-1">
+				</div>
+			</div>
+		<div class="row my-4">
+			</div>
+		<h5 class="row mt-4 pt-4">和弦网站</h5>
+		<div class="row">
+		<ul class="list-group">
+			<li class="list-group-item"><a href="https://www.byguitar.com/tool/chords" target="_blank">和弦宝典 - 彼岸吉他</a></li>
+			<li class="list-group-item"><a href="https://tomplay.com/zh/guitar-chords" target="_blank">吉他和弦 - Tomplay</a></li>
+			<li class="list-group-item"><a href="https://how-to-play-electric-guitar.net/zh/basic-guitar-chord-chart-for-beginners.html" target="_blank">开放和弦 - how-to-play-electric-guitar.net</a></li>
+			<li class="list-group-item"><a href="https://guitartoolhub.com/chord-library" target="_blank">Guitar Chord Library - Guitar Tool Hub</a></li>
+			<li class="list-group-item"><a href="https://chordistry.gock.net/chords" target="_blank">Chord Shapes - Chordistry Guitar Chords</a></li>
+			<li class="list-group-item"><a href="https://muted.io/guitar-chords/" target="_blank">Guitar Chords: Diagrams with Finger Positions</a></li>
+			<li class="list-group-item"><a href="https://tombatossals.github.io/react-chords/" target="_blank">chords-db - Chords Database</a></li>
+			<li class="list-group-item"><a href="https://react-guitar.com/" target="_blank">React Guitar</a></li>
+
+		</ul>
+		</div>
+		</div>
+		</div>
+		<!-- 批量生成和弦图 开关 -->
+		<a class="btn btn-sm btn-outline-secondary w-100 mb-3 mt-4" id="toggleBatch">
+			显示 批量生成和弦 ▼
+		</a>
+		<!-- 批量生成和弦图内容（默认隐藏） -->
+		<!-- <div id="moreSettings" class="row" style="display:none;"> -->
+		<div id="batchChords" class="row" style="display:none;">
+		<div class="col-md-4">
+			<div class="card p-2 mb-2">
+				<label>批量生成和弦列表<small class="text-secondary">（支持 “空格/逗号/制表符/顿号/换行” 分隔）</small></label>
+				<textarea id="batchChordText" class="form-control my-2" rows="6" placeholder="例如：
+C Am Fmaj7 G 
+D,Em	A；F#m
+G7;Bb"></textarea>
+				<button id="batchGenerateBtn" class="btn btn-primary w-100">
+				批量生成和弦
+				</button>
+			</div>
+			<div class="card p-2 mb-2">
+				<label class="d-block mb-1">快捷预设和弦组<small class="text-secondary">（点击一键填入文本框）</small></label>
+				<!--<div class="d-flex flex-wrap gap-2">-->
+				<div class="grid gap-1">
+					<button class="btn btn-sm btn-outline-primary preset-fill" data-str="C Am Fmaj7 G">组1：C-Am-Fmaj7-G</button>
+					<button class="btn btn-sm btn-outline-primary preset-fill" data-str="Em C G D">组2：Em-C-G-D</button>
+					<button class="btn btn-sm btn-outline-primary preset-fill" data-str="E A Dm">组3：E-A-Dm</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-7 offset-md-1">
+			<!-- 批量输出区域 -->
+			<div id="batchResult" class="d-flex flex-wrap justify-content-start gap-3">
+				<div class="row"></div>
+			</div>
+		</div>
+		</div>
+	</div>
+<footer class="bg-light text-center mt-4 p-1">
+	本工具使用了 <a href="https://omnibrain.github.io/svguitar/" target="_blank">SVGuitar</a>。
+	@<a href="https://imgyx.github.io/Guitar-Chord-Generator/" target="_blank">GYX 2026</a>
+</footer>
+
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.slim.min.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js" integrity="sha384-+sLIOodYLS7CIrQpBjl+C7nPvqq+FbNUBDunl/OZv93DB7Ln/533i8e/mZXLi/P+" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
+<!-- <script src="./js/svguitar.umd.js"></script> -->
+<!--<script src="https://cdn.jsdelivr.net/npm/svguitar@2.5.1/dist/svguitar.umd.min.js"></script>-->
+<script src="https://cdn.jsdelivr.net/npm/svguitar/dist/svguitar.umd.min.js"></script>
+
+<!--
+<script src="https://cdn.jsdelivr.net/gh/imgyx/Guitar-Chord-Generator/js/chords_lib.json.min.js"></script>
+-->
+<script src="./js/chords_lib.json.js"></script>
+<script>console.log('chrods data: ',presetChords)</script>
+
+<script>
+;(function () {
+	var initialSettings = {
+		//title: 'B',		// 和弦名称
+		position: 1,	// 起始品格
+		frets: 4,		// 品格数量
+		strings: 6,		// 琴弦数量
+
+		orientation: 'vertical',	// 方向
+		style: 'normal',			// 风格
+
+		//noPosition: true,		// 隐藏起始品格
+		showFretMarkers: true,	// 显示品格标记
+
+		titleFontSize: 64,			// 默认48
+		//titleColor: '#f00000',
+		fingerSize: 0.85,			// 手指大小，相对于琴弦间距，默认0.65
+		fingerTextSize: 40,			// 手指字体大小，默认22
+		//fingerColor: '#000',		// 手指颜色
+		//fingerTextColor: '#FFF',	// 手指字体颜色
+
+		nutWidth: 10,		// 琴枕粗细，默认10
+		strokeWidth: 2.5,		// 线条粗细，默认2
+
+		//color: '#000000',
+		//backgroundColor: 'none',
+
+		fretSize: 1.3,			// 品格高度，相对于琴弦间距，默认1.5
+		barreChordRadius: 0.45,	// 大横按和弦半径，默认0.25
+
+		emptyStringIndicatorSize: 0.5,	// 空弦上方‘X’和‘O’的符号大小，默认0.6
+		//fixedDiagramPosition: false,	// 固定标题位置
+		//stringColor: '#000000',
+		//fretColor: '#000000',
+		//tuning: ['E', 'A', 'D', 'G', 'B', 'E'],
+		//watermark: '© 2026 GYX',
+		//watermarkColor: "#00A0E9",
+	}
+
+	// 定义默认和弦
+	var initialChord = {
+		title: "B",
+		// array of [string, fret | 'x' | 0, text]
+		fingers: [
+			[2, 4, '4'],
+			[3, 4, '3'],
+			[4, 4, '2'],
+			[6, 'x']
+		],
+
+		// optional: barres for barre chords
+		barres: [{
+			fromString: 5, toString: 1, fret: 2, text: '1'
+		}],
+		tuning: [],
+	}
+
+	// 把默认值填到文本框里
+	//$('#chord-input').val(JSON.stringify(initialChord, null, 2));
+	// 和弦json格式化函数：支持 [2,2]、[2,4,"4"]、[6,"x"] 全部格式
+	function formatChord(obj) {
+		// 读取当前和弦名称
+		var title = $('#chart-title').val();
+
+		// 复制对象并带上 title
+		var chordWithTitle = {
+			title: title,
+			...obj
+		};
+
+		// 1. 先正常格式化
+		let json = JSON.stringify(chordWithTitle, null, "\t");
+
+		// 2. 只压缩「2个元素」的数组 → [6, "x"]
+		json = json.replace(/\[\s*(\S+)\s*,\s*(\S+)\s*\]/g, "[$1, $2]");
+
+		// 3. 只压缩「3个元素」的数组 → [2, 4, "4"]
+		json = json.replace(/\[\s*(\S+)\s*,\s*(\S+)\s*,\s*(\S+)\s*\]/g, "[$1, $2, $3]");
+
+		return json;
+	}
+
+	// 自动填充和弦指法默认值到【和弦指法】输入框
+	function fillDefaultValues() {
+		// 填充弦品 & 文字
+		initialChord.fingers.forEach(item => {
+			const str = item[0];
+			const fret = item[1];
+			const text = item[2] || '';
+			$(`.string-fret[data-string="${str}"]`).val(fret);
+			$(`.string-text[data-string="${str}"]`).val(text);
+		});
+
+		// 填充横按
+		if (initialChord.barres && initialChord.barres.length > 0) {
+			const b = initialChord.barres[0];
+			$('#barre_enable').prop('checked', true);
+			$('#barre_from').val(b.fromString);
+			$('#barre_to').val(b.toString);
+			$('#barre_fret').val(b.fret);
+			$('#barre_text').val(b.text || '');
+		}
+	}
+
+	// 读取和弦表单，#chord-form
+	function buildChordFromForm() {
+		// 读取6~1弦
+		let fingers = [];
+		$('.string-fret').each(function () {
+			const str = $(this).data('string');
+			const fretVal = $(this).val().trim();
+			const textVal = $(`.string-text[data-string="${str}"]`).val().trim();
+
+			if (fretVal === '') return;
+
+			const item = [str, fretVal === 'x' ? 'x' : Number(fretVal)];
+			if (textVal !== '') item.push(textVal);
+			fingers.push(item);
+		});
+
+		// 读取横按
+		let barres = [];
+		if ($('#barre_enable').is(':checked')) {
+			const from = Number($('#barre_from').val());
+			const to = Number($('#barre_to').val());
+			const fret = Number($('#barre_fret').val());
+			const text = $('#barre_text').val().trim();
+
+			if (!isNaN(from) && !isNaN(to) && !isNaN(fret)) {
+				const barre = { fromString: from, toString: to, fret: fret };
+				if (text !== '') barre.text = text;
+				barres.push(barre);
+			}
+		}
+		return { fingers, barres };
+
+		// 读取横按
+	}
+
+	// 【JSON → 表单】把 JSON 数据填充回输入框
+	function fillChordToForm(chord) {
+		// 清空所有输入
+		$('.string-fret').val('');
+		$('.string-text').val('');
+		$('#barre_enable').prop('checked', false);
+		$('#barre_from').val('');
+		$('#barre_to').val('');
+		$('#barre_fret').val('');
+		$('#barre_text').val('');
+
+		// 填充 fingers
+		if (chord.fingers) {
+			chord.fingers.forEach(item => {
+				const str = item[0];
+				const fret = item[1];
+				const text = item[2] || '';
+				$(`.string-fret[data-string="${str}"]`).val(fret);
+				$(`.string-text[data-string="${str}"]`).val(text);
+			});
+		}
+
+		// 填充 barres
+		if (chord.barres && chord.barres.length > 0) {
+			const b = chord.barres[0];
+			$('#barre_enable').prop('checked', true);
+			$('#barre_from').val(b.fromString);
+			$('#barre_to').val(b.toString);
+			$('#barre_fret').val(b.fret);
+			$('#barre_text').val(b.text || '');
+		}
+	}
+
+	// 自动计算 品位标记（fretMarkers）
+	function getFretMarkers(position) {
+		// 基础标记（position = 1 时使用）
+		const baseMarkers = [
+			2, 4, 6, 8,
+			{ fret: 11, double: true },
+			14, 16, 18, 20,
+			{ fret: 23, double: true },
+		];
+
+		// 如果 position 是 1，直接返回
+		if (position === 1) return baseMarkers;
+
+		// 否则：计算偏移量（position >= 2 时，全部加上偏移）
+		const offset = position - 1;
+
+		return baseMarkers.map(item => {
+			if (typeof item === 'number') {
+				const newFret = item - offset;
+				return newFret >= 0 ? newFret : null;
+			}
+			if (typeof item === 'object' && item.fret) {
+				const newFret = item.fret - offset;
+				if (newFret < 0) return null;
+				return { ...item, fret: newFret };
+			}
+			return item;
+		}).filter(item => item !== null); // 小于0的彻底删除
+	}
+
+
+	// 读取图表配置（全局共用）
+	//function getSettings() {
+	//	return $('#chart-config-form').serializeArray().reduce((acc, cur) => {
+	//		acc[cur.name] = isNaN(cur.value) ? cur.value : Number(cur.value);
+	//		return acc;
+	//	}, {});
+	//}
+	function getSettings() {
+		let settings = $('#chart-config-form').serializeArray().reduce((acc, cur) => {
+		// 先判断是空字符串，空值直接不赋值，或者后续删除
+			let val = cur.value.trim();
+			if(val === '') return acc; // 空值直接跳过，不加入对象
+			// 非空再判断是否转数字
+			acc[cur.name] = isNaN(val) ? val : Number(val);
+			return acc;
+		}, {});
+		console.log(settings);
+
+		// 复选框单独赋值
+		settings.showFretMarkers = $('#showFretMarkers').prop('checked');
+		settings.noPosition = $('#noPosition').prop('checked');
+		settings.fixedDiagramPosition = $('#fixedDiagramPosition').prop('checked');
+		
+		// 自动计算品位标记
+		if (settings.showFretMarkers) {
+			settings.fretMarkers = getFretMarkers(settings.position);
+		}
+
+		// 关键：空值 自动删除！
+		for (let key in settings) {
+			let val = settings[key];
+			// 如果是空字符串、null、undefined，直接删掉这个配置
+			if (val === '' || val === null || val === undefined) {
+				delete settings[key];
+			}
+		}
+		
+		return settings;
+	}
+
+	// 画图函数
+	function drawChord(chord, settings) {
+		//console.log('Drawing chord ', chord, ' with settings', settings)
+		//console.log('使用设置', settings, '绘制和弦', chord)
+
+		try {
+			// 👇 关键：每次画图前清空容器，防止追加多个图表
+			//document.getElementById('result').innerHTML = '';
+			// 每次绘制 重新new实例，清空全部历史配置缓存
+			//chart = new svguitar.SVGuitarChord('#result');
+			
+			// 自动计算品位标记
+			//if (settings.showFretMarkers) {
+			//	settings.fretMarkers = getFretMarkers(settings.position);
+			//}
+			
+			console.log('使用设置', settings, '绘制和弦', chord)
+			const safeChord = {
+				fingers: chord.fingers || [],
+				barres: chord.barres || []
+			};
+			chart.configure(settings).chord(chord).draw()
+		} catch (err) {
+			alert('错误：' + err.message)
+			throw err
+		}
+	}
+
+	// 把默认值填到输入框里
+	//Object.keys(initialSettings).forEach(function (name) {
+	//	$('#chart-config-form [name=' + name + ']').val(initialSettings[name])
+	//})
+	Object.keys(initialSettings).forEach(function (name) {
+		const $el = $('#chart-config-form [name=' + name + ']');
+		if ($el.is(':checkbox')) {
+			$el.prop('checked', initialSettings[name]);
+		} else {
+			$el.val(initialSettings[name]);
+		}
+	});
+
+	// initialChord 填入输入框
+	$('#chord-input').val(formatChord(initialChord));
+	// 自动赋值和弦名称
+	$('#chart-title').val(initialChord.title);
+
+	// initialize chart 初始化图表
+	var chart = new svguitar.SVGuitarChord('#result')
+		.configure(initialSettings)
+		.chord(initialChord)
+
+	// 提交 chord-form → 读取配置 + 更新JSON + 画图
+	$('#chord-form').submit(function (e) {
+		e.preventDefault();	// 不让页面刷新
+		var chord = buildChordFromForm();
+		var settings = getSettings();
+		$('#chord-input').val(formatChord(chord));
+		drawChord(chord, settings);
+	});
+
+	// 提交 chord-json → 读取配置 + 更新表单 + 画图
+	$('#chord-json').submit(function (e) {
+		e.preventDefault();	// 不让页面刷新
+		try {
+			var chord = JSON.parse($('#chord-input').val());
+			var settings = getSettings();
+			fillChordToForm(chord);
+			//console.log(settings);
+			// 自动赋值和弦名称
+			$('#chart-title').val(settings.title);
+			drawChord(chord, settings);
+		} catch (err) {
+			alert('Failed to parse the chord. Are you sure you entered valid JSON?')
+		}
+	});
+
+	//$('#chart-config-form,#chord-json').submit(function (e) {
+	$('#chart-xxx').submit(function (e) {
+		e.preventDefault()	// 不让页面刷新
+
+		// 读取表单所有配置
+		var settings = $('#chart-config-form')
+		.serializeArray()
+		.reduce(function (acc, cur) {
+			acc[cur.name] = isNaN(cur.value) ? cur.value : Number(cur.value)
+
+			return acc
+		}, {})
+
+		// 读取和弦 JSON
+		try {
+			var chord = JSON.parse($('#chord-input').val())
+		} catch (err) {
+		alert('Failed to parse the chord. Are you sure you entered valid JSON?')
+
+		return
+		}
+		// 画和弦图
+		drawChord(chord, settings)
+	})
+
+
+// 获取和弦名称
+function getChordName(){
+	return $('#chart-title').val() || "和弦指法";
+}
+
+// 1、下载SVG文件
+$('#downloadSvgBtn').on('click',function(){
+	const svgDom = $('#result svg')[0];
+	const svgStr = new XMLSerializer().serializeToString(svgDom);
+	const blob = new Blob([svgStr],{type:"image/svg+xml;charset=utf-8"});
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = getChordName() + ".svg";
+	a.click();
+	URL.revokeObjectURL(url);
+});
+
+// PNG下载（读取选择的倍率）
+$('#downloadPngBtn').click(function () {
+  const svgDom = $('#result svg')[0];
+  if (!svgDom) return alert('暂无和弦图');
+
+  let viewBoxStr = svgDom.getAttribute('viewBox');
+  let x = 0, y = 0, w, h;
+  if (viewBoxStr) {
+    [x, y, w, h] = viewBoxStr.split(' ').map(Number);
+  } else {
+    w = svgDom.width.baseVal.value;
+    h = svgDom.height.baseVal.value;
+  }
+
+  // 读取选中缩放倍率
+  const scale = Number($('#pngScaleSelect').val());
+
+  const svgXml = new XMLSerializer().serializeToString(svgDom);
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgXml);
+
+  img.onload = function () {
+    const canvas = document.createElement('canvas');
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, x, y, w, h);
+
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `${getChordName()}_${scale}x.png`;
+    a.click();
+  };
+});
+
+
+	// 打开页面显示默认和弦
+	fillDefaultValues();
+	drawChord(initialChord, initialSettings)
+
+
+	//  自动生成快捷和弦按钮（根据 presetChords 自动渲染）
+	function renderQuickChords() {
+		const container = $('#quickChordContainer');
+		container.empty(); // 清空旧按钮
+
+		// 遍历所有预设和弦数组 → 生成按钮
+		presetChords.forEach(item => {
+			const btn = $(`<button type="button" class="btn btn-sm btn-outline-primary quick-chord m-1"data-title="${item.title}">${item.title}</button>`);
+			container.append(btn);
+		});
+	}
+
+	// 页面加载时自动生成
+	$(function(){
+		renderQuickChords();
+	});
+
+	// 快捷按钮点击
+	// 委托绑定：绑定在固定父容器 #quickChordContainer，动态生成按钮自动生效
+	$('#quickChordContainer').on('click', '.quick-chord', function () {
+		const title = $(this).data('title');
+		const chordData = presetChords.find(item => item.title === title);
+		// 👇 关键：没有 barres 就自动补为空数组，不会报错
+		chordData.barres = chordData.barres || [];
+		// 填充和弦到输入框
+		fillChordToForm(chordData);
+		// 自动同步json文本域
+		$('#chord-input').val(formatChord(chordData));
+		// 自动赋值和弦名称与品格位置
+		$('#chart-title').val(chordData.title);
+		$('#chart-position').val(chordData.position || 1);
+		// 读取配置并绘图
+		let cfg = getSettings();
+		drawChord(chordData,cfg);
+	});
+
+
+// 预设按钮一键填充到文本框
+$('.preset-fill').on('click', function () {
+  const chordText = $(this).data('str');
+  // 追加写入，不覆盖原有内容；如需直接覆盖改为 $('#batchChordText').val(chordText)
+  let origin = $('#batchChordText').val().trim();
+  if(origin) origin += '\n';
+  $('#batchChordText').val(origin + chordText);
+});
+
+
+// 批量生成和弦图
+$('#batchGenerateBtn').click(function () {
+  const text = $('#batchChordText').val().trim();
+  if (!text) return alert('请输入和弦列表');
+  const chordNames = text.replace(/[\n\r\s\t,、=;；\/]+/g, ',').split(',').map(line => line.trim()).filter(line => line);
+  $('#batchResult').empty();
+
+  // 深度复制默认配置，避免共用配置污染
+  //const chordSettings = JSON.parse(JSON.stringify(initialSettings));
+  // 使用表单中的设置
+  const chordSettings = getSettings();
+  console.log("chordSettings ", chordSettings)
+
+  chordNames.forEach(title => {
+    const chord = presetChords.find(c => c.title === title);
+    if (!chord) {
+      alert(`未找到预设和弦：${title}`);
+      return;
+    }
+    chord.barres = chord.barres || [];
+    // 单个和弦容器（固定宽高+居中，解决飘位）
+    const itemWrap = $(`
+      <div class="col-2 my-2 p-1 pb-2" style="text-align:center;border:1px solid #eee;">
+        <!--<h5 class="mb-2">${title}</h5>-->
+        <div class="batch-svg-box"></div>
+      </div>
+    `);
+    $('#batchResult').append(itemWrap);
+    const dom = itemWrap.find('.batch-svg-box')[0];
+
+    // 每个和弦独立配置
+    const cfg = { ...chordSettings };
+    cfg.position = chord.position ?? 1;
+
+    // 新建实例绘图
+    try {
+      const tempChart = new svguitar.SVGuitarChord(dom);
+      tempChart.configure(cfg).chord(chord).draw();
+    } catch (e) {
+      console.error(title+'绘制异常',e);
+    }
+  });
+})
+})()
+
+
+// 获取颜色值
+//document.querySelector('#color').addEventListener('input',e=>{
+//  console.log(e.target.value)
+//})
+
+
+// 更多设置折叠/展开
+$('#toggleMore').click(function(e) {
+	e.preventDefault();
+	const more = $('#moreSettings');
+	if (more.is(':hidden')) {
+		more.show();
+		$(this).html('隐藏设置 ▲');
+	} else {
+		more.hide();
+		$(this).html('更多设置 ▼');
+	}
+});
+
+
+// JS 控制启用/禁用 大横按
+$(function(){
+	let $switch = $('#barre_enable');
+	let $input = $('.barre');
+	// 勾选 = 启用 | 未勾选 = 禁用
+	function setInputState(){
+		$input.prop('disabled', !$switch.is(':checked'));
+	}
+	// 页面初始化立马执行一次（修复默认关闭BUG）
+	setInputState();
+
+	// 开关变化时，切换
+	$switch.on('change',setInputState);
+})
+
+
+// 更多设置折叠/展开
+$('#toggleBatch').click(function(e) {
+	e.preventDefault();
+	const more = $('#batchChords');
+	if (more.is(':hidden')) {
+		more.show();
+		$(this).html('隐藏 批量生成和弦 ▲');
+	} else {
+		more.hide();
+		$(this).html('显示 批量生成和弦 ▼');
+	}
+});
+</script>
+</body>
+</html>
